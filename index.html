@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#3b2a20">
+  <title>Coffee &amp; Code Bingo</title>
+  <meta name="description" content="Bingo for Coffee &amp; Code at the Brampton Library. Tap a square when you hear it.">
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <header>
+    <h1>Coffee &amp; Code Bingo</h1>
+    <p class="sub">Brampton Library. Tap a square when you hear it. Five in a row wins.</p>
+  </header>
+
+  <main>
+    <div id="status" class="status" role="status" aria-live="polite">&nbsp;</div>
+    <div id="card" class="card" role="grid" aria-label="Bingo card"></div>
+
+    <div class="actions">
+      <button id="new-card" type="button">New card</button>
+      <button id="clear" type="button">Clear marks</button>
+      <button id="share" type="button">Copy card link</button>
+    </div>
+    <p class="fine">Your card and marks are saved on this device. “Copy card link” reopens the same card elsewhere (marks stay on the device).</p>
+  </main>
+
+  <noscript><p class="fine">This page needs JavaScript to build your card.</p></noscript>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

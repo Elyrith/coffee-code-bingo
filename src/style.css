@@ -1,0 +1,120 @@
+:root {
+  --bg: #f6efe6;
+  --ink: #2b1d14;
+  --muted: #6b5848;
+  --cell: #fffaf3;
+  --cell-line: #d8c8b4;
+  --mark: #2f7d5b;
+  --mark-ink: #ffffff;
+  --win: #c9791a;
+  --free: #e9dcc9;
+  --focus: #1b5fd1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1d1510;
+    --ink: #f3e8da;
+    --muted: #b8a691;
+    --cell: #2a1f18;
+    --cell-line: #4a3a2d;
+    --mark: #3aa77a;
+    --mark-ink: #0d1f17;
+    --win: #e39a3b;
+    --free: #3a2c22;
+    --focus: #7aa7ff;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.3;
+}
+
+header, main { max-width: 640px; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 20px; text-align: center; }
+h1 { margin: 0; font-size: 1.6rem; }
+.sub { margin: 4px 0 12px; color: var(--muted); }
+
+.status {
+  min-height: 2.2em;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--win);
+}
+
+.card {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.cell {
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font: inherit;
+  font-size: clamp(0.58rem, 2.7vw, 0.85rem);
+  color: var(--ink);
+  background: var(--cell);
+  border: 2px solid var(--cell-line);
+  border-radius: 8px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cell[aria-pressed="true"] {
+  background: var(--mark);
+  border-color: var(--mark);
+  color: var(--mark-ink);
+  font-weight: 600;
+}
+
+.cell.free {
+  background: var(--free);
+  border-style: dashed;
+  font-weight: 700;
+  cursor: default;
+}
+
+.cell.free[aria-pressed="true"] { background: var(--free); color: var(--ink); border-color: var(--cell-line); }
+
+.cell.win {
+  border-color: var(--win);
+  box-shadow: 0 0 0 3px var(--win);
+}
+
+.cell:focus-visible, button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 16px 0 8px; }
+
+.actions button {
+  font: inherit;
+  padding: 10px 16px;
+  min-height: 44px;
+  color: var(--ink);
+  background: var(--cell);
+  border: 2px solid var(--cell-line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.fine { color: var(--muted); font-size: 0.8rem; text-align: center; margin: 8px 0 24px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cell { transition: background-color 0.12s, box-shadow 0.12s; }
+  .cell.win { animation: pop 0.4s ease-out; }
+  @keyframes pop { 50% { transform: scale(1.06); } }
+}
