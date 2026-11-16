@@ -92,27 +92,32 @@ function refresh() {
   });
 }
 
-// Shrink each cell's text to the largest size that fits inside the square.
-// The label is measured (not the button) because centred overflow in a flex
-// box is clipped on both sides and would not show up in scrollHeight.
-const MIN_PX = 8;
+// Shrink each cell's text until it fits inside the square. The CSS sets a base
+// size from the card's width and the user's font size (see .cell in style.css);
+// this only finds how much of it to keep, as the unitless factor --fit (1 = no
+// shrinking). Storing a factor, not pixels, lets the text keep scaling with the
+// card between refits. The label is measured (not the button) because centred
+// overflow in a flex box is clipped on both sides and would not show up in
+// scrollHeight.
+const MIN_PX = 8; // never shrink text below this, whatever the font size
 function fitText() {
   for (const b of $card.children) {
     const label = b.firstElementChild;
     const room = b.clientHeight - 4; // 2px padding top and bottom
     if (room <= 0) continue; // not laid out yet
-    let lo = MIN_PX;
-    let hi = Math.min(16, b.clientWidth * 0.2);
-    const fits = (px) => {
-      b.style.fontSize = `${px}px`;
+    const fits = (factor) => {
+      b.style.setProperty("--fit", factor);
       return label.offsetHeight <= room && label.scrollWidth <= label.clientWidth;
     };
-    if (fits(hi)) continue;
+    if (fits(1)) continue;
+    const base = parseFloat(getComputedStyle(b).fontSize); // size at --fit: 1
+    let lo = Math.min(1, MIN_PX / base);
+    let hi = 1;
     for (let i = 0; i < 6; i++) {
       const mid = (lo + hi) / 2;
       if (fits(mid)) lo = mid; else hi = mid;
     }
-    b.style.fontSize = `${lo}px`;
+    b.style.setProperty("--fit", lo);
   }
 }
 
