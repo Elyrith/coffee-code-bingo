@@ -24,7 +24,12 @@
     <div class="actions">
       <button id="new-card" type="button">New card</button>
       <button id="clear" type="button">Clear marks</button>
-      <button id="share" type="button">Copy card link</button>
+      <span class="copy">
+        <button id="share" type="button">Copy card link</button>
+        <!-- The bubble is the live region. It stays empty until a copy and sits
+             outside the button, whose children are not reliably announced. -->
+        <span id="copy-tip" class="copy-tip" role="status"></span>
+      </span>
     </div>
     <p class="fine">Your card and marks are saved on this device. “Copy card link” lets you use the same card elsewhere.</p>
 

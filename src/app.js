@@ -188,15 +188,41 @@ document.getElementById("clear").addEventListener("click", async () => {
   }
 });
 
-document.getElementById("share").addEventListener("click", async (e) => {
-  const btn = e.currentTarget;
+// Feedback for "Copy card link". The bubble next to the button is a
+// role="status" live region, so the same words reach sighted and screen-reader
+// users, for failure as well as success. The button itself never changes or
+// gets disabled (copying is safe to repeat, and a failure can be retried).
+const $copyBtn = document.getElementById("share");
+const $copyTip = document.getElementById("copy-tip");
+let copyTimer;
+let lastCopyMessage = "";
+
+function reportCopy(ok) {
+  clearTimeout(copyTimer); // a repeat click restarts the timer instead of stacking
+  $copyBtn.removeAttribute("data-copied");
+  $copyBtn.removeAttribute("data-failed");
+  let message = ok ? "Copied" : "Copy failed";
+  // VoiceOver skips a message identical to the last one from the same region,
+  // even after it was emptied, so make a repeat differ by a no-break space.
+  if (message === lastCopyMessage) message += " ";
+  lastCopyMessage = message;
+  $copyTip.textContent = "";
+  $copyBtn.setAttribute(ok ? "data-copied" : "data-failed", "");
+  requestAnimationFrame(() => { $copyTip.textContent = message; });
+  copyTimer = setTimeout(() => {
+    $copyBtn.removeAttribute("data-copied");
+    $copyBtn.removeAttribute("data-failed");
+    $copyTip.textContent = ""; // no stale "Copied" left for browse mode
+  }, 2000);
+}
+
+$copyBtn.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(location.href);
-    btn.textContent = "Copied!";
+    reportCopy(true);
   } catch {
-    btn.textContent = "Copy from address bar";
+    reportCopy(false);
   }
-  setTimeout(() => { btn.textContent = "Copy card link"; }, 2000);
 });
 
 window.addEventListener("hashchange", () => {
