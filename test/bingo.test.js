@@ -29,12 +29,34 @@ test("card is 25 unique cells with the free square in the centre", () => {
   }
 });
 
-test("rejects a list that is too short", () => {
+test("rejects a list with fewer than 24 different squares", () => {
   assert.throws(() => makeCard("x", SQUARES.slice(0, 23)));
+  const padded = [...Array(23).fill("a").map((_, i) => `s${i}`), "s0", "s0", "s0"];
+  assert.throws(() => makeCard("x", padded)); // 26 entries but only 23 distinct
 });
 
-test("square list has no duplicates", () => {
-  assert.equal(new Set(SQUARES).size, SQUARES.length);
+test("the real square list has enough different squares", () => {
+  assert.ok(new Set(SQUARES).size >= 24);
+});
+
+test("a repeated square never appears twice on one card", () => {
+  const list = [...Array.from({ length: 30 }, (_, i) => `s${i}`), "s0", "s0"];
+  for (let i = 0; i < 100; i++) {
+    const card = makeCard(`dup${i}`, list);
+    assert.equal(new Set(card).size, 25);
+  }
+});
+
+test("a repeated square lands on more cards than a single one", () => {
+  const list = [...Array.from({ length: 30 }, (_, i) => `s${i}`), "s0"];
+  let doubled = 0;
+  let single = 0;
+  for (let i = 0; i < 400; i++) {
+    const card = makeCard(`w${i}`, list);
+    if (card.includes("s0")) doubled++;
+    if (card.includes("s1")) single++;
+  }
+  assert.ok(doubled > single + 20, `doubled=${doubled} single=${single}`);
 });
 
 test("there are 12 lines, each of 5 cells", () => {
@@ -66,5 +88,5 @@ test("newSeed is a short, mostly-unique string", () => {
 test("card distribution is not stuck on the first squares", () => {
   const seen = new Set();
   for (let i = 0; i < 50; i++) makeCard(`s${i}`, SQUARES).forEach((c) => seen.add(c));
-  assert.equal(seen.size, SQUARES.length + 1); // every square + the free one
+  assert.equal(seen.size, new Set(SQUARES).size + 1); // every square + the free one
 });

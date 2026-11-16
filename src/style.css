@@ -51,28 +51,39 @@ h1 { margin: 0; font-size: 1.6rem; }
 
 .card {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* minmax(0, 1fr): columns may not grow to fit their content. */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 4px;
 }
 
+/* Cells are fixed squares. overflow:hidden stops long text from stretching
+   the grid row; app.js shrinks the font (--fit) until the text fits. */
 .cell {
   aspect-ratio: 1;
   min-width: 0;
-  padding: 3px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   font: inherit;
-  font-size: clamp(0.58rem, 2.7vw, 0.85rem);
+  font-size: 0.8rem; /* fallback until app.js fits the text */
+  line-height: 1.15;
   color: var(--ink);
   background: var(--cell);
   border: 2px solid var(--cell-line);
   border-radius: 8px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cell .label {
+  display: block;
+  max-width: 100%;
   overflow-wrap: anywhere;
   hyphens: auto;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .cell[aria-pressed="true"] {

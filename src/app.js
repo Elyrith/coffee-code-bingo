@@ -49,7 +49,10 @@ function render() {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "cell";
-    b.textContent = text;
+    const label = document.createElement("span");
+    label.className = "label";
+    label.textContent = text;
+    b.append(label);
     b.setAttribute("role", "gridcell");
     const isFree = i === FREE_INDEX;
     if (isFree) b.classList.add("free");
@@ -59,7 +62,39 @@ function render() {
     if (!isFree) b.addEventListener("click", () => toggle(i));
     $card.append(b);
   });
+  fitText();
 }
+
+// Shrink each cell's text to the largest size that fits inside the square.
+// The label is measured (not the button) because centred overflow in a flex
+// box is clipped on both sides and would not show up in scrollHeight.
+const MIN_PX = 8;
+function fitText() {
+  for (const b of $card.children) {
+    const label = b.firstElementChild;
+    const room = b.clientHeight - 4; // 2px padding top and bottom
+    if (room <= 0) continue; // not laid out yet
+    let lo = MIN_PX;
+    let hi = Math.min(16, b.clientWidth * 0.2);
+    const fits = (px) => {
+      b.style.fontSize = `${px}px`;
+      return label.offsetHeight <= room && label.scrollWidth <= label.clientWidth;
+    };
+    if (fits(hi)) continue;
+    for (let i = 0; i < 6; i++) {
+      const mid = (lo + hi) / 2;
+      if (fits(mid)) lo = mid; else hi = mid;
+    }
+    b.style.fontSize = `${lo}px`;
+  }
+}
+
+let fitQueued = false;
+new ResizeObserver(() => {
+  if (fitQueued) return;
+  fitQueued = true;
+  requestAnimationFrame(() => { fitQueued = false; fitText(); });
+}).observe($card);
 
 function toggle(i) {
   if (marked.has(i)) marked.delete(i); else marked.add(i);

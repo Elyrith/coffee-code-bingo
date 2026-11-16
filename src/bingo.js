@@ -33,10 +33,15 @@ export function newSeed() {
 }
 
 // Same seed + same square list => same card, every time.
+//
+// A square listed more than once is more likely to land on a card (it gets
+// that many chances in the shuffle), but a card never shows the same text
+// twice: after shuffling we keep the first 24 distinct texts.
 export function makeCard(seed, squares) {
   const needed = SIZE * SIZE - 1;
-  if (squares.length < needed) {
-    throw new Error(`Need at least ${needed} squares, got ${squares.length}`);
+  const distinct = new Set(squares).size;
+  if (distinct < needed) {
+    throw new Error(`Need at least ${needed} different squares, got ${distinct}`);
   }
   const rng = makeRng(seed);
   const pool = squares.slice();
@@ -44,7 +49,7 @@ export function makeCard(seed, squares) {
     const j = Math.floor(rng() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  const picked = pool.slice(0, needed);
+  const picked = [...new Set(pool)].slice(0, needed);
   picked.splice(FREE_INDEX, 0, FREE_LABEL);
   return picked;
 }
