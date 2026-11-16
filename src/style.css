@@ -130,7 +130,8 @@ h1 { margin: 0; font-size: 1.6rem; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 16px 0 8px; }
 
-.actions button {
+.actions button,
+dialog button {
   font: inherit;
   padding: 10px 16px;
   min-height: 44px;
@@ -139,6 +140,29 @@ h1 { margin: 0; font-size: 1.6rem; }
   border: 2px solid var(--cell-line);
   border-radius: 8px;
   cursor: pointer;
+}
+
+/* Native modal. No display rule on dialog itself: that would override the
+   closed state. */
+dialog {
+  width: min(90vw, 22rem);
+  padding: 20px;
+  color: var(--ink);
+  background: var(--cell);
+  border: 2px solid var(--cell-line);
+  border-radius: 12px;
+}
+dialog h2 { margin: 0 0 8px; font-size: 1.1rem; }
+dialog p { margin: 0 0 16px; color: var(--muted); }
+.dialog-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* Without these, scrolling over the backdrop or inside the dialog scrolls the
+   page behind it. */
+dialog:modal { overscroll-behavior: contain; }
+dialog::backdrop {
+  overflow: hidden; /* ::backdrop is not a scroll container by default */
+  overscroll-behavior: contain;
+  background: rgb(0 0 0 / 0.55);
 }
 
 .fine { color: var(--muted); font-size: 0.8rem; text-align: center; margin: 8px 0 24px; }

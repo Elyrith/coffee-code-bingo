@@ -144,14 +144,42 @@ function announce(justWon) {
   if (justWon && navigator.vibrate) navigator.vibrate(150);
 }
 
-document.getElementById("new-card").addEventListener("click", () => {
-  if (isPristine() || confirm("Replace this card with a new one? Your marks on it will be lost.")) {
+// Asks a yes/no question in the native <dialog>. Resolves true only when the
+// OK button was used; Cancel, Esc, the back gesture and a tap outside resolve
+// false. The browser handles focus, the inert page and focus return.
+const $dialog = document.getElementById("confirm");
+function ask({ title, text, ok }) {
+  if (typeof $dialog.showModal !== "function") return Promise.resolve(confirm(`${title} ${text}`));
+  document.getElementById("confirm-title").textContent = title;
+  document.getElementById("confirm-text").textContent = text;
+  document.getElementById("confirm-ok").textContent = ok;
+  $dialog.returnValue = "";
+  return new Promise((resolve) => {
+    $dialog.addEventListener("close", () => {
+      const accepted = $dialog.returnValue === "ok";
+      $dialog.returnValue = ""; // a dismissal sets no value; do not leak this one
+      resolve(accepted);
+    }, { once: true });
+    $dialog.showModal();
+  });
+}
+
+document.getElementById("new-card").addEventListener("click", async () => {
+  if (isPristine() || await ask({
+    title: "Replace this card?",
+    text: "Your marks on it will be lost.",
+    ok: "New card",
+  })) {
     useSeed(newSeed());
   }
 });
 
-document.getElementById("clear").addEventListener("click", () => {
-  if (isPristine() || confirm("Clear all marks on this card?")) {
+document.getElementById("clear").addEventListener("click", async () => {
+  if (isPristine() || await ask({
+    title: "Clear all marks?",
+    text: "The card stays the same; only your marks are removed.",
+    ok: "Clear marks",
+  })) {
     marked = freshMarks();
     saveMarks();
     lineCount = 0;

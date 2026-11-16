@@ -33,6 +33,19 @@
     </section>
   </main>
 
+  <!-- Confirmation for "New card" and "Clear marks"; filled in and opened by
+       app.js. Esc, the back gesture and a tap outside all count as Cancel. -->
+  <dialog id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-text" closedby="any">
+    <form method="dialog">
+      <h2 id="confirm-title"></h2>
+      <p id="confirm-text"></p>
+      <div class="dialog-actions">
+        <button value="cancel" autofocus>Cancel</button>
+        <button value="ok" id="confirm-ok"></button>
+      </div>
+    </form>
+  </dialog>
+
   <noscript><p class="fine">This page needs JavaScript to build your card.</p></noscript>
   <script type="module" src="src/app.js"></script>
 </body>
