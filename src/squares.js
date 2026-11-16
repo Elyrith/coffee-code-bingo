@@ -5,7 +5,7 @@
 
 export const SQUARES = [
   "Someone says “coding is dead”",
-  "”Vibe coding”/”Vibe coded”",
+  "“Vibe coding”/“Vibe coded”",
   "“This is the way”",
   "“Everyone should be doing this”",
   "“I haven't written a line of code in...”",
@@ -33,8 +33,8 @@ export const SQUARES = [
   "A hot take nobody asked for",
   "Someone asks “What does that mean?”",
   "Someone helps a first-timer get started",
-  "Someone talks for 5 minutes without anyone being able to interrupt",
-  "Someone answers a newcomer's question with bad instructions on how to do it with AI instead",
-  "”You're right to call me out on that.”",
-  "”You're right to call me out on that.”", /* Doubled up because it explains so much. */
+  "Someone monologues for 5 minutes",
+  "Bad AI advice given to a newcomer",
+  "“You're right to call me out on that.”",
+  "“You're right to call me out on that.”", /* Doubled up because it explains so much. */
 ];
