@@ -1,8 +1,11 @@
-import { FREE_INDEX, completedLines, makeCard, newSeed } from "./bingo.js";
+import { FREE_INDEX, completedLines, freshMarks, makeCard, newSeed } from "./bingo.js";
 import { SQUARES } from "./squares.js";
 
 const KEY_LAST = "ccbingo:lastSeed";
 const keyMarks = (seed) => `ccbingo:marks:${seed}`;
+// The free square is on by default, so only "off" needs remembering. A separate
+// key keeps marks saved by earlier versions of the page valid.
+const keyFreeOff = (seed) => `ccbingo:freeOff:${seed}`;
 
 // localStorage can throw (private mode, blocked storage). The app still works
 // without it; the card just isn't remembered.
@@ -18,7 +21,7 @@ const $status = document.getElementById("status");
 
 let seed;
 let card;
-let marked; // Set of cell indices (the free square is implied)
+let marked; // Set of cell indices; the free square is in it while it is "on"
 let lineCount = 0;
 
 function seedFromUrl() {
@@ -26,66 +29,95 @@ function seedFromUrl() {
   return m ? m[1] : null;
 }
 
+function loadMarks(s) {
+  let set;
+  try {
+    const saved = JSON.parse(load(keyMarks(s)) ?? "[]");
+    set = new Set(saved.filter((i) => Number.isInteger(i) && i >= 0 && i < 25 && i !== FREE_INDEX));
+  } catch {
+    set = new Set();
+  }
+  if (load(keyFreeOff(s)) !== "1") set.add(FREE_INDEX);
+  return set;
+}
+
+function saveMarks() {
+  save(keyMarks(seed), JSON.stringify([...marked].filter((i) => i !== FREE_INDEX)));
+  save(keyFreeOff(seed), marked.has(FREE_INDEX) ? "0" : "1");
+}
+
+// True while the player has not changed anything on this card, so there is
+// nothing to lose by replacing or clearing it.
+function isPristine() {
+  return marked.size === 1 && marked.has(FREE_INDEX);
+}
+
 function useSeed(s) {
   seed = s;
   card = makeCard(seed, SQUARES);
   save(KEY_LAST, seed);
   history.replaceState(null, "", `#card=${seed}`);
-  try {
-    const saved = JSON.parse(load(keyMarks(seed)) ?? "[]");
-    marked = new Set(saved.filter((i) => Number.isInteger(i) && i >= 0 && i < 25));
-  } catch {
-    marked = new Set();
-  }
+  marked = loadMarks(seed);
   lineCount = completedLines(marked).length;
-  render();
+  build();
   announce(false);
 }
 
-function render() {
+// Builds the 25 buttons. This only happens for a new card: tapping a square
+// updates its button in place (see refresh), because replacing the buttons
+// would drop keyboard and screen-reader focus on every tap.
+function build() {
   $card.replaceChildren();
-  const wins = new Set(completedLines(marked).flat());
   card.forEach((text, i) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "cell";
+    b.className = i === FREE_INDEX ? "cell free" : "cell";
     const label = document.createElement("span");
     label.className = "label";
     label.textContent = text;
     b.append(label);
-    b.setAttribute("role", "gridcell");
-    const isFree = i === FREE_INDEX;
-    if (isFree) b.classList.add("free");
-    const on = isFree || marked.has(i);
-    b.setAttribute("aria-pressed", String(on));
-    if (wins.has(i)) b.classList.add("win");
-    if (!isFree) b.addEventListener("click", () => toggle(i));
+    b.addEventListener("click", () => toggle(i));
     $card.append(b);
   });
+  refresh();
   fitText();
 }
 
-// Shrink each cell's text to the largest size that fits inside the square.
-// The label is measured (not the button) because centred overflow in a flex
-// box is clipped on both sides and would not show up in scrollHeight.
-const MIN_PX = 8;
+// Brings every button in line with `marked` without recreating anything.
+function refresh() {
+  const wins = new Set(completedLines(marked).flat());
+  [...$card.children].forEach((b, i) => {
+    b.setAttribute("aria-pressed", String(marked.has(i)));
+    b.classList.toggle("win", wins.has(i));
+  });
+}
+
+// Shrink each cell's text until it fits inside the square. The CSS sets a base
+// size from the card's width and the user's font size (see .cell in style.css);
+// this only finds how much of it to keep, as the unitless factor --fit (1 = no
+// shrinking). Storing a factor, not pixels, lets the text keep scaling with the
+// card between refits. The label is measured (not the button) because centred
+// overflow in a flex box is clipped on both sides and would not show up in
+// scrollHeight.
+const MIN_PX = 8; // never shrink text below this, whatever the font size
 function fitText() {
   for (const b of $card.children) {
     const label = b.firstElementChild;
     const room = b.clientHeight - 4; // 2px padding top and bottom
     if (room <= 0) continue; // not laid out yet
-    let lo = MIN_PX;
-    let hi = Math.min(16, b.clientWidth * 0.2);
-    const fits = (px) => {
-      b.style.fontSize = `${px}px`;
+    const fits = (factor) => {
+      b.style.setProperty("--fit", factor);
       return label.offsetHeight <= room && label.scrollWidth <= label.clientWidth;
     };
-    if (fits(hi)) continue;
+    if (fits(1)) continue;
+    const base = parseFloat(getComputedStyle(b).fontSize); // size at --fit: 1
+    let lo = Math.min(1, MIN_PX / base);
+    let hi = 1;
     for (let i = 0; i < 6; i++) {
       const mid = (lo + hi) / 2;
       if (fits(mid)) lo = mid; else hi = mid;
     }
-    b.style.fontSize = `${lo}px`;
+    b.style.setProperty("--fit", lo);
   }
 }
 
@@ -98,45 +130,99 @@ new ResizeObserver(() => {
 
 function toggle(i) {
   if (marked.has(i)) marked.delete(i); else marked.add(i);
-  save(keyMarks(seed), JSON.stringify([...marked]));
+  saveMarks();
   const before = lineCount;
   lineCount = completedLines(marked).length;
-  render();
+  refresh();
   announce(lineCount > before);
 }
 
 function announce(justWon) {
-  if (lineCount === 0) $status.textContent = " ";
+  if (lineCount === 0) $status.textContent = " ";
   else if (justWon) $status.textContent = lineCount === 1 ? "BINGO!" : `BINGO! (${lineCount} lines)`;
   else $status.textContent = lineCount === 1 ? "1 line complete" : `${lineCount} lines complete`;
   if (justWon && navigator.vibrate) navigator.vibrate(150);
 }
 
-document.getElementById("new-card").addEventListener("click", () => {
-  if (marked.size === 0 || confirm("Replace this card with a new one? Your marks on it will be lost.")) {
+// Asks a yes/no question in the native <dialog>. Resolves true only when the
+// OK button was used; Cancel, Esc, the back gesture and a tap outside resolve
+// false. The browser handles focus, the inert page and focus return.
+const $dialog = document.getElementById("confirm");
+function ask({ title, text, ok }) {
+  if (typeof $dialog.showModal !== "function") return Promise.resolve(confirm(`${title} ${text}`));
+  document.getElementById("confirm-title").textContent = title;
+  document.getElementById("confirm-text").textContent = text;
+  document.getElementById("confirm-ok").textContent = ok;
+  $dialog.returnValue = "";
+  return new Promise((resolve) => {
+    $dialog.addEventListener("close", () => {
+      const accepted = $dialog.returnValue === "ok";
+      $dialog.returnValue = ""; // a dismissal sets no value; do not leak this one
+      resolve(accepted);
+    }, { once: true });
+    $dialog.showModal();
+  });
+}
+
+document.getElementById("new-card").addEventListener("click", async () => {
+  if (isPristine() || await ask({
+    title: "Replace this card?",
+    text: "Your marks on it will be lost.",
+    ok: "New card",
+  })) {
     useSeed(newSeed());
   }
 });
 
-document.getElementById("clear").addEventListener("click", () => {
-  if (marked.size === 0 || confirm("Clear all marks on this card?")) {
-    marked = new Set();
-    save(keyMarks(seed), "[]");
+document.getElementById("clear").addEventListener("click", async () => {
+  if (isPristine() || await ask({
+    title: "Clear all marks?",
+    text: "The card stays the same; only your marks are removed.",
+    ok: "Clear marks",
+  })) {
+    marked = freshMarks();
+    saveMarks();
     lineCount = 0;
-    render();
+    refresh();
     announce(false);
   }
 });
 
-document.getElementById("share").addEventListener("click", async (e) => {
-  const btn = e.currentTarget;
+// Feedback for "Copy card link". The bubble next to the button is a
+// role="status" live region, so the same words reach sighted and screen-reader
+// users, for failure as well as success. The button itself never changes or
+// gets disabled (copying is safe to repeat, and a failure can be retried).
+const $copyBtn = document.getElementById("share");
+const $copyTip = document.getElementById("copy-tip");
+let copyTimer;
+let lastCopyMessage = "";
+
+function reportCopy(ok) {
+  clearTimeout(copyTimer); // a repeat click restarts the timer instead of stacking
+  $copyBtn.removeAttribute("data-copied");
+  $copyBtn.removeAttribute("data-failed");
+  let message = ok ? "Copied" : "Copy failed";
+  // VoiceOver skips a message identical to the last one from the same region,
+  // even after it was emptied, so make a repeat differ by a no-break space.
+  if (message === lastCopyMessage) message += " ";
+  lastCopyMessage = message;
+  $copyTip.textContent = "";
+  $copyBtn.setAttribute(ok ? "data-copied" : "data-failed", "");
+  requestAnimationFrame(() => { $copyTip.textContent = message; });
+  copyTimer = setTimeout(() => {
+    $copyBtn.removeAttribute("data-copied");
+    $copyBtn.removeAttribute("data-failed");
+    $copyTip.textContent = ""; // no stale "Copied" left for browse mode
+  }, 2000);
+}
+
+$copyBtn.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(location.href);
-    btn.textContent = "Copied!";
+    reportCopy(true);
   } catch {
-    btn.textContent = "Copy from address bar";
+    reportCopy(false);
   }
-  setTimeout(() => { btn.textContent = "Copy card link"; }, 2000);
 });
 
 window.addEventListener("hashchange", () => {

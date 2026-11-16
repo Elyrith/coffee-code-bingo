@@ -9,6 +9,8 @@
   --win: #c9791a;
   --free: #e9dcc9;
   --focus: #1b5fd1;
+  /* On the root so the viewport, scrollbars and form controls follow it too. */
+  color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -54,11 +56,15 @@ h1 { margin: 0; font-size: 1.6rem; }
   /* minmax(0, 1fr): columns may not grow to fit their content. */
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 4px;
+  /* Lets the cells size their text from the card's width (cqi, below). */
+  container-type: inline-size;
 }
 
 /* Cells are fixed squares. overflow:hidden stops long text from stretching
-   the grid row; app.js shrinks the font (--fit) until the text fits. */
+   the grid row; app.js sets --fit (a factor between 0 and 1) to shrink the
+   font until the text fits. */
 .cell {
+  --fit: 1;
   aspect-ratio: 1;
   min-width: 0;
   min-height: 0;
@@ -69,7 +75,7 @@ h1 { margin: 0; font-size: 1.6rem; }
   justify-content: center;
   text-align: center;
   font: inherit;
-  font-size: 0.8rem; /* fallback until app.js fits the text */
+  font-size: 0.8rem; /* browsers without container query units */
   line-height: 1.15;
   color: var(--ink);
   background: var(--cell);
@@ -79,6 +85,14 @@ h1 { margin: 0; font-size: 1.6rem; }
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Base size: about a fifth of a cell's width, never under 0.5rem or over 1rem,
+   so it follows the user's font size and the card's width. The max is twice the
+   min, within the 2.5x that keeps text resizable. app.js scales it down by --fit
+   where a long label would not fit. */
+@supports (font-size: 1cqi) {
+  .cell { font-size: calc(clamp(0.5rem, 3.6cqi, 1rem) * var(--fit)); }
+}
+
 .cell .label {
   display: block;
   max-width: 100%;
@@ -86,23 +100,30 @@ h1 { margin: 0; font-size: 1.6rem; }
   hyphens: auto;
 }
 
+/* Marking must not change the text's width: app.js fits the font size once per
+   card and does not re-fit when a square is tapped. */
 .cell[aria-pressed="true"] {
   background: var(--mark);
   border-color: var(--mark);
   color: var(--mark-ink);
-  font-weight: 600;
 }
 
+/* The free square is a normal toggle that starts "on". A dashed border keeps it
+   looking special; when on, the dashes are drawn in the mark's text colour so
+   they show against the filled square. */
 .cell.free {
   background: var(--free);
   border-style: dashed;
   font-weight: 700;
-  cursor: default;
 }
 
-.cell.free[aria-pressed="true"] { background: var(--free); color: var(--ink); border-color: var(--cell-line); }
+.cell.free[aria-pressed="true"] {
+  background: var(--mark);
+  border-color: var(--mark-ink);
+}
 
-.cell.win {
+.cell.win,
+.cell.free.win {
   border-color: var(--win);
   box-shadow: 0 0 0 3px var(--win);
 }
@@ -111,7 +132,8 @@ h1 { margin: 0; font-size: 1.6rem; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 16px 0 8px; }
 
-.actions button {
+.actions button,
+dialog button {
   font: inherit;
   padding: 10px 16px;
   min-height: 44px;
@@ -120,6 +142,52 @@ h1 { margin: 0; font-size: 1.6rem; }
   border: 2px solid var(--cell-line);
   border-radius: 8px;
   cursor: pointer;
+}
+
+/* "Copied" / "Copy failed" bubble under the copy button. Shown with opacity,
+   not display or visibility, so it stays in the accessibility tree and is
+   announced. */
+.copy { position: relative; display: flex; }
+.copy-tip {
+  position: absolute;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  z-index: 1;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  color: var(--bg);
+  background: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+#share[data-copied] + .copy-tip,
+#share[data-failed] + .copy-tip { opacity: 1; }
+
+/* Native modal. No display rule on dialog itself: that would override the
+   closed state. */
+dialog {
+  width: min(90vw, 22rem);
+  padding: 20px;
+  color: var(--ink);
+  background: var(--cell);
+  border: 2px solid var(--cell-line);
+  border-radius: 12px;
+}
+dialog h2 { margin: 0 0 8px; font-size: 1.1rem; }
+dialog p { margin: 0 0 16px; color: var(--muted); }
+.dialog-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* Without these, scrolling over the backdrop or inside the dialog scrolls the
+   page behind it. */
+dialog:modal { overscroll-behavior: contain; }
+dialog::backdrop {
+  overflow: hidden; /* ::backdrop is not a scroll container by default */
+  overscroll-behavior: contain;
+  background: rgb(0 0 0 / 0.55);
 }
 
 .fine { color: var(--muted); font-size: 0.8rem; text-align: center; margin: 8px 0 24px; }
