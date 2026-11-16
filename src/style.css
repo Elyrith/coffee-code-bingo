@@ -9,6 +9,8 @@
   --win: #c9791a;
   --free: #e9dcc9;
   --focus: #1b5fd1;
+  /* On the root so the viewport, scrollbars and form controls follow it too. */
+  color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {

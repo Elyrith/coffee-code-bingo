@@ -3,7 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#3b2a20">
+  <!-- Tells the browser both themes are supported before it paints, so the
+       background, scrollbars and default controls match (no white flash). -->
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#3b2a20" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1d1510" media="(prefers-color-scheme: dark)">
   <title>Coffee &amp; Code Bingo</title>
   <meta name="description" content="Bingo for Coffee &amp; Code at the Brampton Library. Tap a square when you hear it.">
   <link rel="stylesheet" href="src/style.css">
