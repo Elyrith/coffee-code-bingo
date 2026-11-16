@@ -68,9 +68,15 @@ export const LINES = (() => {
   return lines;
 })();
 
-// `marked` is any iterable of cell indices. The free square always counts.
+// The marks a new card starts with: only the free square, which is "on" until
+// the player taps it off (it is a normal toggle, just a head start).
+export function freshMarks() {
+  return new Set([FREE_INDEX]);
+}
+
+// `marked` is any iterable of cell indices. The free square counts only while
+// it is in the set, so switching it off breaks every line through the centre.
 export function completedLines(marked) {
   const set = new Set(marked);
-  set.add(FREE_INDEX);
   return LINES.filter((line) => line.every((i) => set.has(i)));
 }

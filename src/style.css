@@ -86,23 +86,30 @@ h1 { margin: 0; font-size: 1.6rem; }
   hyphens: auto;
 }
 
+/* Marking must not change the text's width: app.js fits the font size once per
+   card and does not re-fit when a square is tapped. */
 .cell[aria-pressed="true"] {
   background: var(--mark);
   border-color: var(--mark);
   color: var(--mark-ink);
-  font-weight: 600;
 }
 
+/* The free square is a normal toggle that starts "on". A dashed border keeps it
+   looking special; when on, the dashes are drawn in the mark's text colour so
+   they show against the filled square. */
 .cell.free {
   background: var(--free);
   border-style: dashed;
   font-weight: 700;
-  cursor: default;
 }
 
-.cell.free[aria-pressed="true"] { background: var(--free); color: var(--ink); border-color: var(--cell-line); }
+.cell.free[aria-pressed="true"] {
+  background: var(--mark);
+  border-color: var(--mark-ink);
+}
 
-.cell.win {
+.cell.win,
+.cell.free.win {
   border-color: var(--win);
   box-shadow: 0 0 0 3px var(--win);
 }

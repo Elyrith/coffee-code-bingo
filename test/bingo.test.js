@@ -6,6 +6,7 @@ import {
   LINES,
   SIZE,
   completedLines,
+  freshMarks,
   makeCard,
   newSeed,
 } from "../src/bingo.js";
@@ -64,15 +65,32 @@ test("there are 12 lines, each of 5 cells", () => {
   assert.ok(LINES.every((l) => l.length === 5));
 });
 
-test("free square alone completes nothing", () => {
+test("a fresh card has only the free square on, and that completes nothing", () => {
+  assert.deepEqual([...freshMarks()], [FREE_INDEX]);
+  assert.deepEqual(completedLines(freshMarks()), []);
   assert.deepEqual(completedLines([]), []);
+});
+
+test("freshMarks returns a new set each time", () => {
+  const a = freshMarks();
+  a.add(0);
+  assert.equal(freshMarks().size, 1);
 });
 
 test("detects rows, columns and both diagonals", () => {
   assert.equal(completedLines([0, 1, 2, 3, 4]).length, 1); // top row
-  assert.equal(completedLines([2, 7, 17, 22]).length, 1); // middle column via free
-  assert.equal(completedLines([0, 6, 18, 24]).length, 1); // main diagonal via free
-  assert.equal(completedLines([4, 8, 16, 20]).length, 1); // anti-diagonal via free
+  assert.equal(completedLines([2, 7, 12, 17, 22]).length, 1); // middle column via free
+  assert.equal(completedLines([0, 6, 12, 18, 24]).length, 1); // main diagonal via free
+  assert.equal(completedLines([4, 8, 12, 16, 20]).length, 1); // anti-diagonal via free
+});
+
+test("switching the free square off breaks the lines through the centre", () => {
+  const withFree = [...freshMarks(), 2, 7, 17, 22];
+  assert.equal(completedLines(withFree).length, 1);
+  const withoutFree = withFree.filter((i) => i !== FREE_INDEX);
+  assert.equal(completedLines(withoutFree).length, 0);
+  // Lines that do not touch the centre are unaffected.
+  assert.equal(completedLines([0, 1, 2, 3, 4]).length, 1);
 });
 
 test("four in a row is not a bingo", () => {
