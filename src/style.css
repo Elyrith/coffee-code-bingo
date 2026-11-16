@@ -124,6 +124,20 @@ h1 { margin: 0; font-size: 1.6rem; }
 
 .fine { color: var(--muted); font-size: 0.8rem; text-align: center; margin: 8px 0 24px; }
 
+.share { text-align: center; margin: 8px 0 40px; }
+.share h2 { margin: 0 0 12px; font-size: 1rem; color: var(--muted); font-weight: 600; }
+
+/* Always a light tile, even in dark mode: a QR code needs dark modules on a
+   light background, and the padding is its blank "quiet zone". */
+.qr {
+  display: inline-block;
+  padding: 12px;
+  background: #fffaf3;
+  border-radius: 14px;
+  line-height: 0;
+}
+.qr img { display: block; width: min(240px, 66vw); height: auto; }
+
 @media (prefers-reduced-motion: no-preference) {
   .cell { transition: background-color 0.12s, box-shadow 0.12s; }
   .cell.win { animation: pop 0.4s ease-out; }
